@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 from airobot import Robot, log_info
 from airobot.utils.common import euler2quat, quat2euler
+from model_learners import inverse_model
 
 class PushingEnv(object):
     """
