@@ -1,0 +1,70 @@
+import torch
+import logging
+import torch.nn as nn
+from dataset import ObjPushDataset
+from model_learners import InverseModel
+from torch.utils.data import Dataset, DataLoader
+import numpy as np
+import matplotlib.pyplot as plt
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+logger = logging.getLogger(__name__)
+logging.basicConfig()
+logger.setLevel(logging.INFO)
+
+##### HYPERPARAMETERS ######
+start_state_dims = 2
+next_state_dims = 2
+action_dims = 4
+nn_layer_1_size = 64
+nn_layer_2_size = 32
+criterion = nn.MSELoss()
+lr = 4e-4
+seed = 0
+
+num_epochs= 80
+bsize = 512
+############################
+
+
+def main():
+
+    train_dir = 'push_dataset/train'
+    test_dir = 'push_dataset/test'
+
+    logger.info("Importing data")
+    train_loader = DataLoader(ObjPushDataset(train_dir), batch_size=bsize, shuffle=True)
+    valid_loader = DataLoader(ObjPushDataset(test_dir), batch_size=bsize, shuffle=True)
+
+    logger.info("Importing inverse model")
+    model = InverseModel(start_state_dims=start_state_dims,
+                         next_state_dims=next_state_dims,
+                         action_dims=action_dims,
+                         latent_var_1=nn_layer_1_size,
+                         latent_var_2=nn_layer_2_size,
+                         criterion=criterion,
+                         lr=lr,
+                         seed=seed)
+
+    logger.info("Beginning training")
+    loss_list, avg_loss_list, valid_loss_list = model.train_and_validate(train_loader, valid_loader, num_epochs)
+
+    # plt.plot(loss_list[1000:])
+    # plt.title("Loss")
+    # plt.show()
+
+    plt.plot(avg_loss_list, label="Average loss per epoch")
+    plt.plot(valid_loss_list, label="Average validation loss per epoch")
+    plt.title("Results over all epochs")
+    plt.legend()
+    plt.show()
+
+    plt.plot(avg_loss_list[5:], label="Average loss per epoch")
+    plt.plot(valid_loss_list[5:], label="Average validation loss per epoch")
+    plt.title("Zoomed In (Results over all but first 5 epochs")
+    plt.legend()
+    plt.show()
+
+
+if __name__=='__main__':
+    main()
