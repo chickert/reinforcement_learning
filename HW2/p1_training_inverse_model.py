@@ -19,10 +19,10 @@ action_dims = 4
 nn_layer_1_size = 64
 nn_layer_2_size = 32
 criterion = nn.MSELoss()
-lr = 4e-4
+lr = 8e-4
 seed = 0
 
-num_epochs= 80
+num_epochs= 140
 bsize = 512
 ############################
 
@@ -61,7 +61,13 @@ def main():
 
     plt.plot(avg_loss_list[5:], label="Average loss per epoch")
     plt.plot(valid_loss_list[5:], label="Average validation loss per epoch")
-    plt.title("Zoomed In (Results over all but first 5 epochs")
+    shift = 10
+    spacing = 5
+    xpos = np.linspace(0, num_epochs - shift, (num_epochs - shift) / spacing + 1)
+    my_xticks = np.linspace(shift, num_epochs, num_epochs / spacing)
+    my_xticks = [int(i) for i in my_xticks]
+    plt.xticks(xpos, my_xticks)
+    plt.title(f"Zoomed In (results over all but first {shift} epochs)")
     plt.legend()
     plt.show()
 
