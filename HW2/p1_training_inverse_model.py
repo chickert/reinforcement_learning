@@ -63,8 +63,8 @@ def main():
     plt.plot(valid_loss_list[5:], label="Average validation loss per epoch")
     shift = 10
     spacing = 5
-    xpos = np.linspace(0, num_epochs - shift, (num_epochs - shift) / spacing + 1)
-    my_xticks = np.linspace(shift, num_epochs, num_epochs / spacing)
+    xpos = np.linspace(0, num_epochs - shift, int((num_epochs - shift) // spacing + 1))
+    my_xticks = np.linspace(shift, num_epochs, num_epochs // spacing)
     my_xticks = [int(i) for i in my_xticks]
     plt.xticks(xpos, my_xticks)
     plt.title(f"Zoomed In (results over all but first {shift} epochs)")

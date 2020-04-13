@@ -150,7 +150,5 @@ class ForwardModel(nn.Module):
             logger.info(f'Avg loss this epoch: {np.mean(losses_for_given_epoch)}')
             logger.info(f'Validation loss this epoch: {valid_loss}')
 
-            torch.save(self.model.state_dict(), "fwdmodel_learned_params.pt")
-
         return loss_list, avg_loss_list, valid_loss_list
 

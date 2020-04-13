@@ -8,6 +8,7 @@ from model_learners import InverseModel
 import torch
 device = torch.device('cpu')
 
+
 class PushingEnv(object):
     """
     Poking environment: loads initial object on a table

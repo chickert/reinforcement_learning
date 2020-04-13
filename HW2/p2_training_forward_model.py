@@ -22,7 +22,7 @@ criterion = nn.MSELoss()
 lr = 8e-4
 seed = 0
 
-num_epochs= 230
+num_epochs=230
 bsize = 512
 ############################
 
@@ -45,6 +45,8 @@ def main():
                          criterion=criterion,
                          lr=lr,
                          seed=seed)
+    # Save trained model
+    torch.save(model.state_dict(), "fwdmodel_learned_params.pt")
 
     logger.info("Beginning training")
     loss_list, avg_loss_list, valid_loss_list = model.train_and_validate(train_loader, valid_loader, num_epochs)
@@ -63,8 +65,8 @@ def main():
     plt.plot(valid_loss_list[5:], label="Average validation loss per epoch")
     shift = 5
     spacing = 5
-    xpos = np.linspace(0, num_epochs - shift, (num_epochs - shift) / spacing + 1)
-    my_xticks = np.linspace(shift, num_epochs, num_epochs / spacing)
+    xpos = np.linspace(0, num_epochs - shift, int((num_epochs - shift) // spacing + 1))
+    my_xticks = np.linspace(shift, num_epochs, num_epochs // spacing)
     my_xticks = [int(i) for i in my_xticks]
     plt.xticks(xpos, my_xticks)
     plt.title(f"Zoomed In (results over all but first {shift} epochs)")
