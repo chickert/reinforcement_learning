@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 import copy
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -40,12 +41,7 @@ class ObjPushDataset(Dataset):
 
         push = np.array(push)
 
-        sample = {'obj1': obj1, 'obj2': obj2, 'push': push}
-        return sample 
+        # Returns object start state, obj end state, and action (in that order)
+        # sample = {'obj1': obj1, 'obj2': obj2, 'push': push}
+        return obj1, obj2, push
 
-train_dir = 'push_dataset/train'
-test_dir = 'push_dataset/test'
-bsize = 64
-
-train_loader = DataLoader(ObjPushDataset(train_dir), batch_size=bsize, shuffle=True)
-valid_loader = DataLoader(ObjPushDataset(test_dir), batch_size=bsize, shuffle=True)  

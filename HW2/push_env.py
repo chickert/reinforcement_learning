@@ -4,7 +4,10 @@ import argparse
 import numpy as np
 from airobot import Robot, log_info
 from airobot.utils.common import euler2quat, quat2euler
-from model_learners import inverse_model
+from model_learners import InverseModel
+import torch
+device = torch.device('cpu')
+
 
 class PushingEnv(object):
     """
@@ -60,7 +63,8 @@ class PushingEnv(object):
         self.robot.cam.setup_camera(focus_pt=[0.7, 0, 1.],
                                     dist=0.5, yaw=90, pitch=-60, roll=0)
         self.ext_mat = self.robot.cam.get_cam_ext()
-        self.int_mat = self.robot.cam.get_cam_int()      
+        self.int_mat = self.robot.cam.get_cam_int()
+
 
     def move_ee_xyz(self, delta_xyz):
         return self.robot.arm.move_ee_xyz(delta_xyz, eef_step=0.015)
@@ -181,22 +185,22 @@ class PushingEnv(object):
         np.random.seed(seed)
         start_x, start_y, end_x, end_y = self.sample_push(self.box_pos[0], self.box_pos[1])
         init_obj, goal_obj = self.execute_push(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y)
-        
+
         ### Write code for visualization ###
         init_obj = torch.FloatTensor(init_obj).unsqueeze(0)
         goal_obj = torch.FloatTensor(goal_obj).unsqueeze(0)
-        # Get push from your model. Your model can have a method like "push = self.model.infer(init_obj, goal_obj)"        
+        # Get push from your model. Your model can have a method like "push = self.model.infer(init_obj, goal_obj)"
         push = push[0].detach().numpy()
         start_x, start_y, end_x, end_y = push
-        self.reset_box()       
+        self.reset_box()
         self.execute_push(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y)
         final_obj = self.get_box_pose()[0][:2]
         goal_obj = goal_obj.numpy().flatten()
-        loss = np.linalg.norm(final_obj-goal_obj)
+        loss = np.linalg.norm(final_obj - goal_obj)
         print(f"L2 Distance between final obj position and goal obj position is {loss}")
         return loss
 
-    def plan_inverse_model_extrapolate(self, seed=0):
+    def plan_model_extrapolate(self, seed=0):
         self.go_home()
         self.reset_box()
         np.random.seed(seed)
@@ -206,20 +210,26 @@ class PushingEnv(object):
         if np.random.random() < 0.5:
             push_ang -= np.pi
 
+        goal_obj = None
+        pushes = []
         for _ in range(2):
             obj_x, obj_y = self.get_box_pose()[0][:2]            
             start_x, start_y, end_x, end_y = self.sample_push(obj_x=obj_x, obj_y=obj_y, push_len=0.1, push_ang=push_ang)
+            pushes.append(np.array([start_x, start_y, end_x, end_y]))
             _, goal_obj = self.execute_push(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y)
-        
-        ### Write code for visualization ###
-        self.reset_box()        
-        goal_obj = torch.FloatTensor(goal_obj).unsqueeze(0)
-        
-        # Get push from your model. Your model can have a method like "push = self.model.infer(init_obj, goal_obj)"
-        # Your code should ideally call this twice: once at the start and once when you get intermediate state.
 
-        final_obj = self.get_box_pose()[0][:2]
-        goal_obj = goal_obj.numpy().flatten()
-        loss = np.linalg.norm(final_obj-goal_obj)
-        print(f"L2 Distance between final obj position and goal obj position is {loss}")
-        return loss                               
+        self.reset_box()
+        return np.array(init_obj), np.array(goal_obj), pushes
+        # goal_obj = torch.FloatTensor(goal_obj).unsqueeze(0)
+        #
+        #
+        # # Get push from your model. Your model can have a method like "push = self.model.infer(init_obj, goal_obj)"
+        # # Your code should ideally call this twice: once at the start and once when you get intermediate state.
+        #
+        # final_obj = self.get_box_pose()[0][:2]
+        # goal_obj = goal_obj.numpy().flatten()
+        # loss = np.linalg.norm(final_obj-goal_obj)
+        # print(f"L2 Distance between final obj position and goal obj position is {loss}")
+        # return loss
+
+
