@@ -108,6 +108,9 @@ def main():
 
         start_state = start_state[0]
         goal_state = goal_state[0]
+        start_state = start_state.numpy()
+
+
 
         # Calculate errors
         action_1_error = np.linalg.norm(action_1 - predicted_action_1)
@@ -152,6 +155,8 @@ def main():
                 end_push_y_2=predicted_action_2[3]
             )
         )
+        print("true_pushes", true_pushes)
+        print("pred_pushes", pred_pushes)
 
     logger.info("Saving output to csv files")
     pd.DataFrame(errors).to_csv("results/P3/forward_model_extrap_errors.csv")
