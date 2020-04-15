@@ -45,15 +45,17 @@ def main():
                          criterion=criterion,
                          lr=lr,
                          seed=seed)
-    # Save trained model
-    torch.save(model.state_dict(), "fwdmodel_learned_params.pt")
 
     logger.info("Beginning training")
     loss_list, avg_loss_list, valid_loss_list = model.train_and_validate(train_loader, valid_loader, num_epochs)
 
-    plt.plot(loss_list[1000:])
-    plt.title("Loss")
-    plt.show()
+    # Save trained model
+    logger.info("Saving model parameters to fwdmodel file")
+    torch.save(model.state_dict(), "fwdmodel_learned_params.pt")
+
+    # plt.plot(loss_list[1000:])
+    # plt.title("Loss")
+    # plt.show()
 
     plt.plot(avg_loss_list, label="Average loss per epoch")
     plt.plot(valid_loss_list, label="Average validation loss per epoch")

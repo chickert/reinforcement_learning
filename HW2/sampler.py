@@ -32,7 +32,17 @@ class Sampler:
             push_len = self.gen_push_length()
 
             # Use angle and length to calculate the action (initial and final positions of robot’s arm tip)
-            obj_x, obj_y = start_state.data.numpy()[0]
+
+            # MODIFIED
+            if start_state.data.numpy().shape == (2,):
+                start_state.data.numpy().reshape(1, -1)
+                obj_x, obj_y = start_state.data.numpy()
+            else:
+                obj_x, obj_y = start_state.data.numpy()[0]
+
+            # REGULAR (for P2)
+            # obj_x, obj_y = start_state.data.numpy()[0]
+
             start_x = obj_x - self.push_len_min * np.cos(push_ang)
             start_y = obj_y - self.push_len_min * np.sin(push_ang)
             end_x = obj_x + push_len * np.cos(push_ang)

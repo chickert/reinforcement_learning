@@ -6,6 +6,8 @@ from model_learners import ForwardModel
 from dataset import ObjPushDataset
 from torch.utils.data import Dataset, DataLoader
 from push_env import PushingEnv
+import pandas as pd
+import numpy as np
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logger = logging.getLogger(__name__)
@@ -73,11 +75,14 @@ def main():
     # only want 1 push each time, so set batch_size to 1
     test_loader = DataLoader(ObjPushDataset(test_dir), batch_size=1, shuffle=True)
 
-    true_actions = []
-    pred_actions = []
+    errors = []
+    true_pushes = []
+    pred_pushes = []
+    num_failures = 0
 
     logger.info("Running loop")
     for i, (start_state, goal_state, true_action) in enumerate(test_loader):
+
         logger.info(f'Iteration #{i}')
         # Convert inputs to floats
         start_state = start_state.float()
@@ -85,22 +90,69 @@ def main():
         true_action = true_action.float()
 
         # Generate planned action and compare to true action
-        planned_action = cem.action_plan(start_state=start_state, goal_state=goal_state)
+        try:
+            planned_action = cem.action_plan(start_state=start_state, goal_state=goal_state)
+        except ValueError:
+            planned_action = None
+            print("Failure occured")
+            num_failures += 1
 
-        # target = torch.norm(true_action - planned_action)
-        # logger.info(f'Distance b/w final object pose (after push) and goal object pose {i}: {target}')
+        if planned_action is not None:
+            # Switch output from tensors to numpy for easy use later
+            start_state = start_state.data.numpy()[0]
+            goal_state = goal_state.data.numpy()[0]
+            true_action = true_action.data.numpy()[0]
 
-        # Execute planned action
-        pusher = PushingEnv()
-        start_x, start_y, end_x, end_y = planned_action
-        _, output_state = pusher.execute_push(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y)
+            # Execute planned action
+            # OLD OPTION 1
+            # output_state = np.array(ce_planner.sampler.environment.execute_push(*planned_action))
+            _, output_state = np.array(cem.sampler.environment.execute_push(*planned_action))
 
-        # Compare output state to goal state (should be L2 distance around 0.025)
-        diff = torch.norm(goal_state - output_state)
-        logger.info(f'Distance b/w final object pose (after push) and goal object pose {i}: {diff}')
+            # OLD OPTION 2
+            # pusher = PushingEnv()
+            # _, output_state = pusher.execute_push(*planned_action)
 
-        if i > num_pushes - 1:
+            # Calculate errors
+            action_error = np.linalg.norm(true_action - planned_action)
+            state_error = np.linalg.norm(goal_state - output_state)
+
+            # Keep the results
+            errors.append(
+                dict(
+                    action_error=action_error,
+                    state_error=state_error
+                )
+            )
+
+            true_pushes.append(
+                dict(
+                    obj_x=start_state[0],
+                    obj_y=start_state[1],
+                    start_push_x=true_action[0],
+                    start_push_y=true_action[1],
+                    end_push_x=true_action[2],
+                    end_push_y=true_action[3]
+                )
+            )
+
+            pred_pushes.append(
+                dict(
+                    obj_x=start_state[0],
+                    obj_y=start_state[1],
+                    start_push_x=planned_action[0],
+                    start_push_y=planned_action[1],
+                    end_push_x=planned_action[2],
+                    end_push_y=planned_action[3]
+                )
+            )
+
+        if i - num_failures > num_pushes - 1:
             break
+
+        logger.info("Saving output to csv files")
+        pd.DataFrame(errors).to_csv("results/P2/forward_model_errors.csv")
+        pd.DataFrame(true_pushes).to_csv("results/P2/ground_truth_pushes.csv")
+        pd.DataFrame(pred_pushes).to_csv("results/P2/predicted_pushes.csv")
 
 
 if __name__ == '__main__':

@@ -49,6 +49,10 @@ def main():
     logger.info("Beginning training")
     loss_list, avg_loss_list, valid_loss_list = model.train_and_validate(train_loader, valid_loader, num_epochs)
 
+    # Save trained model
+    logger.info("Saving model parameters to invmodel file")
+    torch.save(model.state_dict(), "invmodel_learned_params.pt")
+
     # plt.plot(loss_list[1000:])
     # plt.title("Loss")
     # plt.show()

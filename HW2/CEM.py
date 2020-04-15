@@ -28,6 +28,10 @@ class CEM:
             # Find losses associated with each action
             losses = []
             for action in actions:
+                # Added for loop to handle extrapolation case (P3; P2 should never enter this)
+                if start_state.shape == torch.Size([2]):
+                    print("Modified state shape for consistency")
+                    start_state = torch.unsqueeze(start_state, 0)
                 combined_input = torch.cat((start_state, action), dim=1)
                 pred_state = self.fwd_model(combined_input)
                 loss = torch.norm(pred_state - goal_state).item()
