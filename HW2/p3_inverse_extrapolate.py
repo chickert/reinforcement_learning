@@ -1,3 +1,8 @@
+"""
+Run this and p3_forward_extrapolate.py for P3
+Then run p3_make_vids.py to generate the videos
+"""
+
 import torch
 import logging
 import torch.nn as nn

@@ -1,3 +1,6 @@
+"""
+Run this to train the forward model
+"""
 import torch
 import logging
 import torch.nn as nn
@@ -5,7 +8,7 @@ from dataset import ObjPushDataset
 from model_learners import ForwardModel
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt; plt.style.use('fivethirtyeight')
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 logger = logging.getLogger(__name__)
@@ -19,10 +22,10 @@ action_dims = 4
 nn_layer_1_size = 64
 nn_layer_2_size = 32
 criterion = nn.MSELoss()
-lr = 8e-4
+lr = 6e-4
 seed = 0
 
-num_epochs=230
+num_epochs = 230
 bsize = 512
 ############################
 
@@ -49,6 +52,9 @@ def main():
     logger.info("Beginning training")
     loss_list, avg_loss_list, valid_loss_list = model.train_and_validate(train_loader, valid_loader, num_epochs)
 
+    logger.info(f'Final train loss: {avg_loss_list[-1]}')
+    logger.info(f'Final test loss: {valid_loss_list[-1]}')
+
     # Save trained model
     logger.info("Saving model parameters to fwdmodel file")
     torch.save(model.state_dict(), "fwdmodel_learned_params.pt")
@@ -60,10 +66,11 @@ def main():
     plt.plot(avg_loss_list, label="Average loss per epoch")
     plt.plot(valid_loss_list, label="Average validation loss per epoch")
     plt.title("Results over all epochs")
+    plt.xlabel("# of Epochs")
     plt.legend()
     plt.show()
 
-    plt.plot(avg_loss_list[5:], label="Average loss per epoch")
+    plt.plot(avg_loss_list[5:], label="Average training loss per epoch")
     plt.plot(valid_loss_list[5:], label="Average validation loss per epoch")
     shift = 5
     spacing = 5
@@ -71,7 +78,8 @@ def main():
     my_xticks = np.linspace(shift, num_epochs, num_epochs // spacing)
     my_xticks = [int(i) for i in my_xticks]
     plt.xticks(xpos, my_xticks)
-    plt.title(f"Zoomed In (results over all but first {shift} epochs)")
+    plt.title(f"Zoomed-In Results (over all but first {shift} epochs)")
+    plt.xlabel("# of Epochs")
     plt.legend()
     plt.show()
 

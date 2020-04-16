@@ -1,3 +1,8 @@
+"""
+After training with p2_training_forward_model.py, run this for p2
+Then run p2_make_vids.py to generate the videos
+"""
+
 import torch
 import torch.nn as nn
 from CEM import CEM

@@ -1,3 +1,8 @@
+"""
+After training with p1_training_inverse_model.py, run this for p1
+Then run p1_make_vids.py to generate the videos
+"""
+
 import torch
 import logging
 import torch.nn as nn

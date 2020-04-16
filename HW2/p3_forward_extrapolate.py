@@ -1,3 +1,8 @@
+"""
+Run this and p3_inverse_extrapolate.py for P3
+Then run p3_make_vids.py to generate the videos
+"""
+
 import torch
 import torch.nn as nn
 from CEM import CEM
