@@ -1,3 +1,8 @@
+"""
+After training with p2_training_forward_model.py, run this for p2
+Then run p2_make_vids.py to generate the videos
+"""
+
 import torch
 import torch.nn as nn
 from CEM import CEM
@@ -22,13 +27,8 @@ action_dims = 4
 nn_layer_1_size = 64
 nn_layer_2_size = 32
 criterion = nn.MSELoss()
-lr = 1e-4
+lr = 8e-4
 seed = 0
-
-"""
-xx_defaults
-xx_names
-"""
 
 n_iterations = 200
 population_size = 100
@@ -39,13 +39,9 @@ smoothing_param = 1     # when set to 1, no smoothing is applied
 
 num_pushes = 10
 
-
 ############################
 
 def main():
-    """
-    xx_names
-    """
     logger.info("Instantiating model and importing weights")
     # instantiate forward model and import pretrained weights
     fwd_model = ForwardModel(start_state_dims=start_state_dims,
@@ -69,16 +65,16 @@ def main():
               smoothing_param=smoothing_param
               )
 
+    errors = []
+    true_pushes = []
+    pred_pushes = []
+    fails = 0
+
     # Load in data
     logger.info("Importing test data")
     test_dir = 'push_dataset/test'
     # only want 1 push each time, so set batch_size to 1
     test_loader = DataLoader(ObjPushDataset(test_dir), batch_size=1, shuffle=True)
-
-    errors = []
-    true_pushes = []
-    pred_pushes = []
-    num_failures = 0
 
     logger.info("Running loop")
     for i, (start_state, goal_state, true_action) in enumerate(test_loader):
@@ -94,8 +90,7 @@ def main():
             planned_action = cem.action_plan(start_state=start_state, goal_state=goal_state)
         except ValueError:
             planned_action = None
-            print("Failure occured")
-            num_failures += 1
+            fails += 1
 
         if planned_action is not None:
             # Switch output from tensors to numpy for easy use later
@@ -104,55 +99,25 @@ def main():
             true_action = true_action.data.numpy()[0]
 
             # Execute planned action
-            # OLD OPTION 1
-            # output_state = np.array(ce_planner.sampler.environment.execute_push(*planned_action))
             _, output_state = np.array(cem.sampler.environment.execute_push(*planned_action))
-
-            # OLD OPTION 2
-            # pusher = PushingEnv()
-            # _, output_state = pusher.execute_push(*planned_action)
 
             # Calculate errors
             action_error = np.linalg.norm(true_action - planned_action)
             state_error = np.linalg.norm(goal_state - output_state)
 
             # Keep the results
-            errors.append(
-                dict(
-                    action_error=action_error,
-                    state_error=state_error
-                )
-            )
+            errors.append(dict(action_error=action_error, state_error=state_error))
+            true_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x=true_action[0],
+                                    start_push_y=true_action[1], end_push_x=true_action[2], end_push_y=true_action[3]))
+            pred_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x=planned_action[0],
+                                    start_push_y=planned_action[1], end_push_x=planned_action[2], end_push_y=planned_action[3]))
 
-            true_pushes.append(
-                dict(
-                    obj_x=start_state[0],
-                    obj_y=start_state[1],
-                    start_push_x=true_action[0],
-                    start_push_y=true_action[1],
-                    end_push_x=true_action[2],
-                    end_push_y=true_action[3]
-                )
-            )
-
-            pred_pushes.append(
-                dict(
-                    obj_x=start_state[0],
-                    obj_y=start_state[1],
-                    start_push_x=planned_action[0],
-                    start_push_y=planned_action[1],
-                    end_push_x=planned_action[2],
-                    end_push_y=planned_action[3]
-                )
-            )
-
-        if i - num_failures > num_pushes - 1:
+        if i - fails > num_pushes - 1:
             break
 
-        logger.info("Saving output to csv files")
         pd.DataFrame(errors).to_csv("results/P2/forward_model_errors.csv")
-        pd.DataFrame(true_pushes).to_csv("results/P2/ground_truth_pushes.csv")
-        pd.DataFrame(pred_pushes).to_csv("results/P2/predicted_pushes.csv")
+        pd.DataFrame(true_pushes).to_csv("results/P2/true_pushes.csv")
+        pd.DataFrame(pred_pushes).to_csv("results/P2/pred_pushes.csv")
 
 
 if __name__ == '__main__':

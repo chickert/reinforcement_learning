@@ -14,7 +14,7 @@ def main():
 
     # Ground truth push videos
     logger.info("Recording ground truth videos")
-    ground_truth_data_path = "results/P1/ground_truth_pushes.csv"
+    ground_truth_data_path = "results/P1/true_pushes.csv"
 
     for i, push in pd.read_csv(ground_truth_data_path, index_col=0).iterrows():
         logger.info(f'Video {i}')
@@ -22,14 +22,14 @@ def main():
         actions = [np.array([push["start_push_x"], push["start_push_y"], push["end_push_x"], push["end_push_y"]])]
 
         # Record video
-        pybullet.startStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, f"results/P1/vids/ground_truth_pushes{i}.mp4")
+        pybullet.startStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4, f"results/P1/vids/true_pushes{i}.mp4")
         env.reset_box(pos=[state[0], state[1], env.box_z])
         for action in actions:
             _, state = env.execute_push(*action)
         pybullet.stopStateLogging(pybullet.STATE_LOGGING_VIDEO_MP4)
 
     # Predicted push videos
-    predicted_data_path = "results/P1/predicted_pushes.csv"
+    predicted_data_path = "results/P1/pred_pushes.csv"
     logger.info("Recording prediction videos")
     for i, push in pd.read_csv(predicted_data_path, index_col=0).iterrows():
         logger.info(f'Video {i}')

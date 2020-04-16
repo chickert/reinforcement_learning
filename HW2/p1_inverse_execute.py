@@ -1,3 +1,8 @@
+"""
+After training with p1_training_inverse_model.py, run this for p1
+Then run p1_make_vids.py to generate the videos
+"""
+
 import torch
 import logging
 import torch.nn as nn
@@ -32,9 +37,6 @@ num_pushes = 10
 
 
 def main():
-    """
-    xx_names
-    """
     logger.info("Instantiating model and importing weights")
     # instantiate forward model and import pretrained weights
     inv_model = InverseModel(start_state_dims=start_state_dims,
@@ -47,8 +49,6 @@ def main():
                              seed=seed)
 
     inv_model.load_state_dict(torch.load("invmodel_learned_params.pt"))
-    train_dir = 'push_dataset/train'
-    test_dir = 'push_dataset/test'
 
     # Load in data
     logger.info("Importing test data")
@@ -89,42 +89,18 @@ def main():
         state_error = np.linalg.norm(goal_state - end_state)
 
         # Keep the results
-        errors.append(
-            dict(
-                action_error=action_error,
-                state_error=state_error
-            )
-        )
-
-        true_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x=true_action[0],
-                start_push_y=true_action[1],
-                end_push_x=true_action[2],
-                end_push_y=true_action[3]
-            )
-        )
-
-        pred_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x=pred_action[0],
-                start_push_y=pred_action[1],
-                end_push_x=pred_action[2],
-                end_push_y=pred_action[3]
-            )
-        )
+        errors.append(dict(action_error=action_error, state_error=state_error))
+        true_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x=true_action[0],
+                                start_push_y=true_action[1], end_push_x=true_action[2], end_push_y=true_action[3]))
+        pred_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x=pred_action[0],
+                                start_push_y=pred_action[1], end_push_x=pred_action[2], end_push_y=pred_action[3]))
 
         if i > num_pushes - 1:
             break
 
-        logger.info("Saving output to csv files")
         pd.DataFrame(errors).to_csv("results/P1/inverse_model_errors.csv")
-        pd.DataFrame(true_pushes).to_csv("results/P1/ground_truth_pushes.csv")
-        pd.DataFrame(pred_pushes).to_csv("results/P1/predicted_pushes.csv")
+        pd.DataFrame(true_pushes).to_csv("results/P1/true_pushes.csv")
+        pd.DataFrame(pred_pushes).to_csv("results/P1/pred_pushes.csv")
 
 
 if __name__ == '__main__':

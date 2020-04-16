@@ -31,18 +31,14 @@ class Sampler:
             push_ang = self.gen_push_angle()
             push_len = self.gen_push_length()
 
-            # Use angle and length to calculate the action (initial and final positions of robot’s arm tip)
-
-            # MODIFIED
+            # Modified to handle P2 and P3
             if start_state.data.numpy().shape == (2,):
                 start_state.data.numpy().reshape(1, -1)
                 obj_x, obj_y = start_state.data.numpy()
             else:
                 obj_x, obj_y = start_state.data.numpy()[0]
 
-            # REGULAR (for P2)
-            # obj_x, obj_y = start_state.data.numpy()[0]
-
+            # Use angle and length to calculate the action (initial and final positions of robot’s arm tip)
             start_x = obj_x - self.push_len_min * np.cos(push_ang)
             start_y = obj_y - self.push_len_min * np.sin(push_ang)
             end_x = obj_x + push_len * np.cos(push_ang)
@@ -59,7 +55,7 @@ class Sampler:
                     and self.environment.workspace_min_x < end_x < self.environment.workspace_max_x \
                     and self.environment.workspace_min_y < end_y < self.environment.workspace_max_y:
                 break
-        # logger.info("exited sample while loop")
+
         return push_ang, push_len, torch.from_numpy(np.array(action)).float().unsqueeze(0)
 
     def gen_push_length(self):
