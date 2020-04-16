@@ -32,20 +32,15 @@ num_pushes = 10
 ############################
 
 def inv_infer(inv_model):
-    """
-    xx_names
-    """
-
     def infer(start_state, goal_state):
         start_state = torch.from_numpy(start_state).float().unsqueeze(0)
         goal_state = torch.from_numpy(goal_state).float().unsqueeze(0)
         combined_input = torch.cat((start_state, goal_state), dim=1)
         return inv_model(combined_input).data.numpy()[0]
-
     return infer
 
 
-def extrapolate(start_state, goal_state, infer, env):
+def project_ahead(start_state, goal_state, infer, env):
     env.reset_box()
     actions = []
     for _ in range(2):
@@ -57,9 +52,6 @@ def extrapolate(start_state, goal_state, infer, env):
 
 
 def main():
-    """
-    xx_names
-    """
     logger.info("Instantiating model and importing weights")
     # instantiate forward model and import pretrained weights
     inv_model = InverseModel(start_state_dims=start_state_dims,
@@ -83,7 +75,7 @@ def main():
     for i in range(num_pushes):
         # Sample push
         start_state, goal_state, (action_1, action_2) = env.plan_model_extrapolate(seed=i)
-        final_state, (predicted_action_1, predicted_action_2) = extrapolate(start_state, goal_state, infer, env)
+        final_state, (predicted_action_1, predicted_action_2) = project_ahead(start_state, goal_state, infer, env)
 
         # Calculate errors
         action_1_error = np.linalg.norm(action_1 - predicted_action_1)
@@ -91,48 +83,20 @@ def main():
         state_error = np.linalg.norm(goal_state - final_state)
 
         # Keep the results
-        errors.append(
-            dict(
-                action_1_error=action_1_error,
-                action_2_error=action_2_error,
-                state_error=state_error
-            )
-        )
-
-        true_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x_1=action_1[0],
-                start_push_y_1=action_1[1],
-                end_push_x_1=action_1[2],
-                end_push_y_1=action_1[3],
-                start_push_x_2=action_2[0],
-                start_push_y_2=action_2[1],
-                end_push_x_2=action_2[2],
-                end_push_y_2=action_2[3]
-            )
-        )
-
-        pred_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x_1=predicted_action_1[0],
-                start_push_y_1=predicted_action_1[1],
-                end_push_x_1=predicted_action_1[2],
-                end_push_y_1=predicted_action_1[3],
-                start_push_x_2=predicted_action_2[0],
-                start_push_y_2=predicted_action_2[1],
-                end_push_x_2=predicted_action_2[2],
-                end_push_y_2=predicted_action_2[3]
-            )
-        )
+        errors.append(dict(action_1_error=action_1_error, action_2_error=action_2_error, state_error=state_error))
+        true_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x_1=action_1[0], start_push_y_1=action_1[1],
+                                end_push_x_1=action_1[2], end_push_y_1=action_1[3], start_push_x_2=action_2[0], start_push_y_2=action_2[1],
+                                end_push_x_2=action_2[2], end_push_y_2=action_2[3]))
+        pred_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x_1=predicted_action_1[0],
+                                start_push_y_1=predicted_action_1[1], end_push_x_1=predicted_action_1[2],
+                                end_push_y_1=predicted_action_1[3], start_push_x_2=predicted_action_2[0],
+                                start_push_y_2=predicted_action_2[1], end_push_x_2=predicted_action_2[2],
+                                end_push_y_2=predicted_action_2[3]))
 
     logger.info("Saving output to csv files")
     pd.DataFrame(errors).to_csv("results/P3/inverse_model_extrap_errors.csv")
-    pd.DataFrame(true_pushes).to_csv("results/P3/inv_ground_truth_pushes.csv")
-    pd.DataFrame(pred_pushes).to_csv("results/P3/inv_predicted_pushes.csv")
+    pd.DataFrame(true_pushes).to_csv("results/P3/inv_true_pushes.csv")
+    pd.DataFrame(pred_pushes).to_csv("results/P3/inv_pred_pushes.csv")
 
 
 if __name__ == '__main__':

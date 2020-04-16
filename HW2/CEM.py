@@ -21,9 +21,8 @@ class CEM:
 
     def action_plan(self, start_state, goal_state):
         for i in range(self.n_iterations):
-            # logger.info("taking sample")
+
             push_angles, push_lengths, actions = self.sampler.sample_whole_population(start_state=start_state)
-            # logger.info('Calculating loss"')
 
             # Find losses associated with each action
             losses = []
@@ -48,9 +47,6 @@ class CEM:
             self.sampler.push_len_mean = self.smoothing_param * np.mean(push_lengths[elites_indices]) + \
                                          (1 - self.smoothing_param) * self.sampler.push_len_mean
 
-            # logger.info(f"On iteration: \t {i}/{self.n_iterations}")
-            # logger.info(f"mean loss: {np.mean(losses)}")
-            # logger.info("\n")
         planned_action = self.sampler.get_best_action(start_state=start_state)
         self.sampler.reset()
         return planned_action

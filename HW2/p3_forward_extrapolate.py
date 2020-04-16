@@ -22,13 +22,8 @@ action_dims = 4
 nn_layer_1_size = 64
 nn_layer_2_size = 32
 criterion = nn.MSELoss()
-lr = 1e-4
+lr = 8e-4
 seed = 0
-
-"""
-xx_defaults
-xx_names
-"""
 
 n_iterations = 200
 population_size = 100
@@ -44,9 +39,6 @@ num_pushes = 10
 
 
 def fwd_infer(cem):
-    """
-    xx_names
-    """
     def infer(start_state, goal_state):
         start_state = torch.tensor(start_state).float()
         goal_state = torch.tensor(goal_state).float()
@@ -54,7 +46,7 @@ def fwd_infer(cem):
     return infer
 
 
-def extrapolate(start_state, goal_state, infer, env):
+def project_ahead(start_state, goal_state, infer, env):
     env.reset_box()
     actions = []
     for _ in range(2):
@@ -66,9 +58,6 @@ def extrapolate(start_state, goal_state, infer, env):
 
 
 def main():
-    """
-    xx_names
-    """
     logger.info("Instantiating model and importing weights")
     # instantiate forward model and import pretrained weights
     fwd_model = ForwardModel(start_state_dims=start_state_dims,
@@ -104,13 +93,11 @@ def main():
         goal_state = torch.from_numpy(goal_state).unsqueeze(0)
         start_state = start_state.float()
         goal_state = goal_state.float()
-        final_state, (predicted_action_1, predicted_action_2) = extrapolate(start_state, goal_state, infer, env=cem.sampler.environment)
+        final_state, (predicted_action_1, predicted_action_2) = project_ahead(start_state, goal_state, infer, env=cem.sampler.environment)
 
         start_state = start_state[0]
         goal_state = goal_state[0]
         start_state = start_state.numpy()
-
-
 
         # Calculate errors
         action_1_error = np.linalg.norm(action_1 - predicted_action_1)
@@ -118,50 +105,23 @@ def main():
         state_error = np.linalg.norm(goal_state - final_state)
 
         # Keep the results
-        errors.append(
-            dict(
-                action_1_error=action_1_error,
-                action_2_error=action_2_error,
-                state_error=state_error
-            )
-        )
+        errors.append(dict(action_1_error=action_1_error, action_2_error=action_2_error, state_error=state_error))
 
-        true_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x_1=action_1[0],
-                start_push_y_1=action_1[1],
-                end_push_x_1=action_1[2],
-                end_push_y_1=action_1[3],
-                start_push_x_2=action_2[0],
-                start_push_y_2=action_2[1],
-                end_push_x_2=action_2[2],
-                end_push_y_2=action_2[3]
-            )
-        )
+        true_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x_1=action_1[0],
+                                start_push_y_1=action_1[1], end_push_x_1=action_1[2], end_push_y_1=action_1[3],
+                                start_push_x_2=action_2[0], start_push_y_2=action_2[1], end_push_x_2=action_2[2],
+                                end_push_y_2=action_2[3]))
 
-        pred_pushes.append(
-            dict(
-                obj_x=start_state[0],
-                obj_y=start_state[1],
-                start_push_x_1=predicted_action_1[0],
-                start_push_y_1=predicted_action_1[1],
-                end_push_x_1=predicted_action_1[2],
-                end_push_y_1=predicted_action_1[3],
-                start_push_x_2=predicted_action_2[0],
-                start_push_y_2=predicted_action_2[1],
-                end_push_x_2=predicted_action_2[2],
-                end_push_y_2=predicted_action_2[3]
-            )
-        )
-        print("true_pushes", true_pushes)
-        print("pred_pushes", pred_pushes)
+        pred_pushes.append(dict(obj_x=start_state[0], obj_y=start_state[1], start_push_x_1=predicted_action_1[0],
+                                start_push_y_1=predicted_action_1[1], end_push_x_1=predicted_action_1[2],
+                                end_push_y_1=predicted_action_1[3], start_push_x_2=predicted_action_2[0],
+                                start_push_y_2=predicted_action_2[1], end_push_x_2=predicted_action_2[2],
+                                end_push_y_2=predicted_action_2[3]))
 
     logger.info("Saving output to csv files")
     pd.DataFrame(errors).to_csv("results/P3/forward_model_extrap_errors.csv")
-    pd.DataFrame(true_pushes).to_csv("results/P3/fwd_ground_truth_pushes.csv")
-    pd.DataFrame(pred_pushes).to_csv("results/P3/fwd_predicted_pushes.csv")
+    pd.DataFrame(true_pushes).to_csv("results/P3/fwd_true_pushes.csv")
+    pd.DataFrame(pred_pushes).to_csv("results/P3/fwd_pred_pushes.csv")
 
 
 if __name__ == '__main__':
