@@ -13,14 +13,16 @@ layer_1_nodes = 128
 layer_2_nodes = 64
 
 gamma = 0.99
-decay_rate = 0.9999
+eps_decay_rate = 0.9999
 lr = 1e-4
 batch_size = 128
+num_episodes = 5000
+max_timesteps = 200
 
 replay_memory_size = 1000
 
 
-steps_before_target_network_update = 100
+episodes_before_target_network_update = 10
 #####################
 
 
@@ -60,12 +62,10 @@ class Agent:
         self.replay_memory = replay_memory
         self.batch_size = batch_size
         self.epsilon = 1
-        self.decay_rate = decay_rate
-        self.target_network_update_counter = 0
-        self.update_target_net_every = steps_before_target_network_update
+        self.eps_decay_rate = decay_rate
 
     def get_e_greedy_action(self, observation):
-        self.epsilon = self.epsilon * self.decay_rate
+        self.epsilon = self.epsilon * self.eps_decay_rate
         if random.random() < self.epsilon:
             # Take random action
             action = env.action_space.sample()
@@ -105,11 +105,6 @@ def train(agent):
     loss = (rewards + gamma * masks[:, 0] * next_state_q_vals - torch.sum(q_vals * actions_one_hot, -1)).mean()
     loss.backward()
     agent.q_network.optimizer.step()
-
-    agent.target_network_update_counter += 1
-    if agent.target_network_update_counter % agent.update_target_net_every == 0:
-        agent.target_network.load_state_dict(agent.q_network.state_dict())
-
     return loss
 
 
@@ -151,30 +146,32 @@ if __name__ == "__main__":
         target_network=target_network,
         replay_memory=replay_memory,
         batch_size=batch_size,
-        decay_rate=decay_rate
+        decay_rate=eps_decay_rate
     )
-    
-    for i_episode in range(4):
+
+    for i_episode in range(num_episodes):
         observation = env.reset()
-        for t in range(10):
-            # env.render()
-            # print(observation)
-            # import ipdb; ipdb.set_trace()
+
+        for t in range(max_timesteps):
             action = agent.get_e_greedy_action(observation=torch.Tensor(observation))
-            print(action)
-            # import ipdb; ipdb.set_trace()
-            next_observation, reward, done, info = env.step(action)
+            next_observation, reward, done, _ = env.step(action)
+
             sarsd = SARSD(state=observation,
-                        action=action,
-                        reward=reward,
-                        next_state=next_observation,
-                         done=done)
-            rep_mem.add(sarsd=sarsd)
+                          action=action,
+                          reward=reward,
+                          next_state=next_observation,
+                          done=done)
+            agent.replay_memory.add(sarsd=sarsd)
+
+            train(agent=agent)
+
             observation = next_observation
 
             if done:
                 print("Episode finished after {} timesteps".format(t + 1))
                 break
 
-        # import ipdb; ipdb.set_trace()
+        if i_episode % episodes_before_target_network_update == 0:
+            agent.target_network.load_state_dict(agent.q_network.state_dict())
+
     env.close()
