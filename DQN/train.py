@@ -10,16 +10,16 @@ from agent import Agent
 from replay_memory import SARSD, ReplayMemory
 
 ##### HYPERPARAMETERS #####
-LAYER_1_NODES = 64
-LAYER_2_NODES = 32
+LAYER_1_NODES = 128
+LAYER_2_NODES = 64
 GAMMA = 0.999
-EPS_DECAY_RATE = 0.99991
-LR = 3e-4
+EPS_DECAY_RATE = 0.99997
+LR = 1e-4
 BATCH_SIZE = 1024
-NUM_EPISODES = 3_000
+NUM_EPISODES = 8_000
 MAX_TIMESTEPS = 400     # max for cartpole is 200, so 400 never interferes in the cartpole case
-REPLAY_MEMORY_SIZE = 5_000
-EPISODES_BEFORE_TARGET_NETWORK_UPDATE = 40
+REPLAY_MEMORY_SIZE = 8_000
+EPISODES_BEFORE_TARGET_NETWORK_UPDATE = 70
 #####################
 
 
@@ -131,6 +131,7 @@ def main():
             tq.update(1)
             print("\nUpdating target network")
             print(f"\tOn episode {i_episode + 1}")
+            print(f"\tOn overall timestep {agent.current_timestep_number}")
             print(f"\tReplay memory now has {len(agent.replay_memory.memory)} transitions")
             agent.target_network.load_state_dict(agent.q_network.state_dict())
 
