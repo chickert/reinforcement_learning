@@ -8,18 +8,21 @@ import numpy as np
 from q_network import Qnetwork
 from agent import Agent
 from replay_memory import SARSD, ReplayMemory
+import random
 
 ##### HYPERPARAMETERS #####
-LAYER_1_NODES = 128
-LAYER_2_NODES = 64
+LAYER_1_NODES = 512
+LAYER_2_NODES = 256
 GAMMA = 0.999
-EPS_DECAY_RATE = 0.99997
+EPS_DECAY_RATE = 0.999992
 LR = 1e-4
-BATCH_SIZE = 1024
-NUM_EPISODES = 8_000
+BATCH_SIZE = 256
+NUM_EPISODES = 15_000
 MAX_TIMESTEPS = 400     # max for cartpole is 200, so 400 never interferes in the cartpole case
-REPLAY_MEMORY_SIZE = 8_000
-EPISODES_BEFORE_TARGET_NETWORK_UPDATE = 70
+REPLAY_MEMORY_SIZE = 500_000
+TIMESTEPS_BEFORE_TARGET_NETWORK_UPDATE = 25_000
+SEED = 1
+SAVE_PATH = './run3_trained_model_'
 #####################
 
 
@@ -64,6 +67,11 @@ def train(agent, gamma, list_of_rewards_for_all_episodes, env):
 
 
 def main():
+    torch.manual_seed(SEED)
+    np.random.seed(SEED)
+    random.seed(SEED)
+
+
     wandb.init(project="dqn", name="dqn-cartpole")
     env = gym.make('CartPole-v0')
 
@@ -127,13 +135,15 @@ def main():
                 # print("Episode finished after {} timesteps".format(t + 1))
                 break
 
-        if (i_episode + 1) % EPISODES_BEFORE_TARGET_NETWORK_UPDATE == 0:
-            tq.update(1)
-            print("\nUpdating target network")
-            print(f"\tOn episode {i_episode + 1}")
-            print(f"\tOn overall timestep {agent.current_timestep_number}")
-            print(f"\tReplay memory now has {len(agent.replay_memory.memory)} transitions")
-            agent.target_network.load_state_dict(agent.q_network.state_dict())
+            if agent.current_timestep_number % TIMESTEPS_BEFORE_TARGET_NETWORK_UPDATE == 0:
+                tq.update(1)
+                print("\nUpdating target network")
+                print(f"\tOn episode {i_episode + 1}")
+                print(f"\tOn overall timestep {agent.current_timestep_number}")
+                print(f"\tReplay memory now has {len(agent.replay_memory.memory)} transitions")
+                agent.target_network.load_state_dict(agent.q_network.state_dict())
+                torch.save(agent.q_network.state_dict(), SAVE_PATH + str(i_episode + 1))
+                print(f'\tModel saved to {SAVE_PATH}')
 
     env.close()
 

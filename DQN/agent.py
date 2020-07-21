@@ -1,5 +1,6 @@
 import torch
 import random
+import numpy as np
 
 
 class Agent:
@@ -18,7 +19,8 @@ class Agent:
         self.current_timestep_number = 1
 
     def get_e_greedy_action(self, observation, env):
-        self.epsilon = self.epsilon * self.eps_decay_rate
+        # self.epsilon = self.epsilon * self.eps_decay_rate
+        self.epsilon = np.clip(self.epsilon * self.eps_decay_rate, a_min=0.05, a_max=None)
         if random.random() < self.epsilon:
             # Take random action
             action = env.action_space.sample()
@@ -26,6 +28,6 @@ class Agent:
             # Take action selected by deep q-network
             with torch.no_grad():
                 q_vals = self.q_network(observation)
-                assert len(q_vals) == 2, "Action selection issue; model outputs q_vals in wrong format"
+                # assert len(q_vals) == 2, "Action selection issue; model outputs q_vals in wrong format"
                 action = q_vals.argmax().item()
         return action
