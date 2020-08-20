@@ -1,7 +1,7 @@
 A sandbox for my (basic) implementations of interesting RL algorithms. 
 
 Note:
-For these implementations I consulted a variety of online and offline resources, including:
+For the PPO implementations I consulted a variety of online and offline resources, including:
 
 https://github.com/openai/baselines/tree/master/baselines
 https://github.com/ChintanTrivedi/rl-bot-football/blob/master/train.py 
